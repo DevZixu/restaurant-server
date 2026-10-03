@@ -1,0 +1,78 @@
+{
+  "info": {
+    "name": "Restaurant Management API",
+    "description": "Cookie-session API collection. Run Login first; Postman will retain the session cookie.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "categoryId", "value": "cat-mains" },
+    { "key": "menuItemId", "value": "item-burger" },
+    { "key": "orderId", "value": "order-sample-01" },
+    { "key": "userId", "value": "user-demo-manager" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" }
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('login succeeded', () => pm.response.to.have.status(200));"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"jordan@example.com\",\n  \"password\": \"demo-password\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        { "name": "Current user", "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/logout" } }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List users", "request": { "method": "GET", "url": "{{baseUrl}}/api/users" } },
+        { "name": "Get user", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/{{userId}}" } },
+        { "name": "Create user", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sam Rivera\",\n  \"email\": \"sam@example.com\",\n  \"password\": \"sample-pass-123\",\n  \"role\": \"staff\"\n}" }, "url": "{{baseUrl}}/api/users" } },
+        { "name": "Update user", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Jordan Lee\"\n}" }, "url": "{{baseUrl}}/api/users/{{userId}}" } },
+        { "name": "Delete user", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/users/{{userId}}" } }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        { "name": "List categories", "request": { "method": "GET", "url": "{{baseUrl}}/api/categories" } },
+        { "name": "Get category", "request": { "method": "GET", "url": "{{baseUrl}}/api/categories/{{categoryId}}" } },
+        { "name": "Create category", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Desserts\",\n  \"description\": \"Something sweet\"\n}" }, "url": "{{baseUrl}}/api/categories" } },
+        { "name": "Update category", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated description\"\n}" }, "url": "{{baseUrl}}/api/categories/{{categoryId}}" } },
+        { "name": "Delete category", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/categories/{{categoryId}}" } }
+      ]
+    },
+    {
+      "name": "Menu items",
+      "item": [
+        { "name": "List menu items", "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items" } },
+        { "name": "Filter by category", "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items?categoryId={{categoryId}}" } },
+        { "name": "Get menu item", "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}" } },
+        { "name": "Create menu item", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Chocolate Cake\",\n  \"description\": \"Dark chocolate ganache\",\n  \"price\": 7.5,\n  \"categoryId\": \"cat-mains\"\n}" }, "url": "{{baseUrl}}/api/menu-items" } },
+        { "name": "Update menu item", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"price\": 15\n}" }, "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}" } },
+        { "name": "Delete menu item", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}" } }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        { "name": "List orders", "request": { "method": "GET", "url": "{{baseUrl}}/api/orders" } },
+        { "name": "Get order", "request": { "method": "GET", "url": "{{baseUrl}}/api/orders/{{orderId}}" } },
+        { "name": "Create order", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('orderId', pm.response.json().id); }"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"customerName\": \"Avery Chen\",\n  \"items\": [\n    { \"menuItemId\": \"item-burger\", \"quantity\": 2 },\n    { \"menuItemId\": \"item-soda\", \"quantity\": 1 }\n  ]\n}" }, "url": "{{baseUrl}}/api/orders" } },
+        { "name": "Update order", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"ready\"\n}" }, "url": "{{baseUrl}}/api/orders/{{orderId}}" } },
+        { "name": "Delete order", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/orders/{{orderId}}" } }
+      ]
+    }
+  ]
+}

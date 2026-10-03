@@ -2,25 +2,34 @@
   "name": "restaurantbackend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/server.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "contract:emit": "prisma contract emit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
-    "@prisma/orm-postgres": "^8.0.0-rc.14",
+    "argon2": "^0.44.0",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@prisma/cli-engine": "^0.6.2",
+    "@prisma/orm-postgres": "8.0.0-rc.12",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
     "@types/node": "^26.6.4",
-    "prisma": "^8.0.0-rc.19"
+    "prisma": "8.0.0-rc.17",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   },
   "overrides": {
     "prisma": {
