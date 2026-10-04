@@ -1,8 +1,6 @@
-import 'dotenv/config';
 import { app } from './app.js';
+import { env } from './config/env.js';
 
-const port = Number(process.env['PORT'] ?? 3000);
-
-app.listen(port, () => {
-	console.log(`Restaurant system listening on http://localhost:${port}`);
+app.listen(env.port, () => {
+	console.log(`Restaurant system listening on http://localhost:${env.port}`);
 });

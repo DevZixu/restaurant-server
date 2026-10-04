@@ -1,23 +1,13 @@
 import express from 'express';
-import session from 'express-session';
+import { sessionMiddleware } from './config/session.js';
+import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errors.js';
-import { api } from './routes/api.js';
+import { apiRoutes } from './routes/index.js';
 
 export const app = express();
 
 app.use(express.json({ limit: '1mb' }));
-app.use(session({
-	name: 'restaurant.sid',
-	secret: process.env['SESSION_SECRET'] ?? 'local-development-session-secret-change-me',
-	resave: false,
-	saveUninitialized: false,
-	cookie: {
-		httpOnly: true,
-		sameSite: 'lax',
-		secure: process.env['NODE_ENV'] === 'production',
-		maxAge: 1000 * 60 * 60 * 8,
-	},
-}));
-app.use('/api', api);
+app.use(sessionMiddleware);
+app.use('/api', apiRoutes);
 app.use('/api', notFound);
 app.use(errorHandler);

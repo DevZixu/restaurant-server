@@ -98,6 +98,13 @@
           },
           "MenuItem": {
             "fields": {
+              "available": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "categoryId": {
                 "nullable": false,
                 "type": {
@@ -176,6 +183,9 @@
             },
             "storage": {
               "fields": {
+                "available": {
+                  "column": "available"
+                },
                 "categoryId": {
                   "column": "categoryId"
                 },
@@ -205,6 +215,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "customerName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -267,6 +284,9 @@
               "fields": {
                 "createdAt": {
                   "column": "createdAt"
+                },
+                "customerName": {
+                  "column": "customerName"
                 },
                 "id": {
                   "column": "id"
@@ -405,6 +425,20 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "passwordHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -437,6 +471,12 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "passwordHash": {
+                  "column": "passwordHash"
+                },
+                "role": {
+                  "column": "role"
                 }
               },
               "namespaceId": "public",
@@ -500,6 +540,15 @@
             },
             "MenuItem": {
               "columns": {
+                "available": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "categoryId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -583,6 +632,11 @@
                     "kind": "function"
                   },
                   "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "customerName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
                   "nullable": false
                 },
                 "id": {
@@ -764,6 +818,20 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "passwordHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "staff"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
                 }
               },
               "foreignKeys": [],
@@ -787,7 +855,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "148047018e4eb65ed84d3643b11a763cd4ecccf93aba18fd069be2d22cb928a3"
+    "storageHash": "d8e6fe3c94ed61bd25e237ab345eecfb71f8ff09a815f4f47f7a446276bc662c"
   },
   "capabilities": {
     "postgres": {
