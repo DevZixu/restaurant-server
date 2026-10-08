@@ -8,6 +8,7 @@ export const app = express();
 
 app.use(express.json({ limit: '1mb' }));
 app.use(sessionMiddleware);
+app.use(express.static('public'));
 app.use('/api', apiRoutes);
 app.use('/api', notFound);
 app.use(errorHandler);

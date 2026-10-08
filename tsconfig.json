@@ -7,7 +7,7 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "NodeNext",
+    "module": "preserve",
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
     "types": [
@@ -42,8 +42,8 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
   },
-  "include": ["src/app.ts", "src/server.ts", "src/models/**/*.ts", "src/middleware/**/*.ts", "src/routes/**/*.ts", "src/types/**/*.d.ts"]
+  "include": ["src/**/*.ts"]
 }

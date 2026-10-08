@@ -1,11 +1,21 @@
 import type { RequestHandler } from 'express';
 import { HttpError } from './errors.js';
-import { store } from '../models/store.js';
+import { db } from '../prisma/db.js';
 
-export const requireAuth: RequestHandler = (request, _response, next) => {
-  if (!request.session.userId || !store.users.some((user) => user.id === request.session.userId)) {
+export const requireAuth: RequestHandler = async (request, _response, next) => {
+  const userId = Number(request.session.userId);
+  if (!Number.isSafeInteger(userId) || userId < 1) {
     next(new HttpError(401, 'Sign in to access this endpoint'));
     return;
   }
-  next();
+  try {
+    const user = await db.orm.public.User.where({ id: userId }).first();
+    if (!user) {
+      next(new HttpError(401, 'Sign in to access this endpoint'));
+      return;
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 };

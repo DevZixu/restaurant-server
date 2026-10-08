@@ -4,23 +4,23 @@
   "target": "postgres",
   "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
   "roots": {
-    "Category": {
+    "categories": {
       "model": "Category",
       "namespace": "public"
     },
-    "MenuItem": {
+    "menu_items": {
       "model": "MenuItem",
       "namespace": "public"
     },
-    "Order": {
-      "model": "Order",
-      "namespace": "public"
-    },
-    "OrderItem": {
+    "order_items": {
       "model": "OrderItem",
       "namespace": "public"
     },
-    "User": {
+    "orders": {
+      "model": "Order",
+      "namespace": "public"
+    },
+    "users": {
       "model": "User",
       "namespace": "public"
     }
@@ -93,7 +93,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "Category"
+              "table": "categories"
             }
           },
           "MenuItem": {
@@ -206,7 +206,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "MenuItem"
+              "table": "menu_items"
             }
           },
           "Order": {
@@ -248,7 +248,7 @@
               }
             },
             "relations": {
-              "items": {
+              "orderItems": {
                 "cardinality": "1:N",
                 "on": {
                   "localFields": [
@@ -299,7 +299,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "Order"
+              "table": "orders"
             }
           },
           "OrderItem": {
@@ -393,7 +393,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "OrderItem"
+              "table": "order_items"
             }
           },
           "User": {
@@ -480,7 +480,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "User"
+              "table": "users"
             }
           }
         }
@@ -492,7 +492,7 @@
       "public": {
         "entries": {
           "table": {
-            "Category": {
+            "categories": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -538,7 +538,7 @@
                 }
               ]
             },
-            "MenuItem": {
+            "menu_items": {
               "columns": {
                 "available": {
                   "codecId": "pg/bool@1",
@@ -595,14 +595,14 @@
                       "categoryId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "MenuItem"
+                    "tableName": "menu_items"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "Category"
+                    "tableName": "categories"
                   }
                 }
               ],
@@ -611,8 +611,8 @@
                   "columns": [
                     "categoryId"
                   ],
-                  "name": "MenuItem_categoryId_idx_15c304f2",
-                  "prefix": "MenuItem_categoryId_idx",
+                  "name": "menu_items_categoryId_idx_15c304f2",
+                  "prefix": "menu_items_categoryId_idx",
                   "unique": false
                 }
               ],
@@ -623,7 +623,105 @@
               },
               "uniques": []
             },
-            "Order": {
+            "order_items": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "menuItemId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "orderId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "quantity": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "unitPrice": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "orderId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "order_items"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "orders"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "menuItemId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "order_items"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "menu_items"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "menuItemId"
+                  ],
+                  "name": "order_items_menuItemId_idx_715cce4c",
+                  "prefix": "order_items_menuItemId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "orderId"
+                  ],
+                  "name": "order_items_orderId_idx_d284871b",
+                  "prefix": "order_items_orderId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "orderId",
+                    "menuItemId"
+                  ]
+                }
+              ]
+            },
+            "orders": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -670,14 +768,14 @@
                       "userId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "Order"
+                    "tableName": "orders"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "User"
+                    "tableName": "users"
                   }
                 }
               ],
@@ -686,8 +784,8 @@
                   "columns": [
                     "userId"
                   ],
-                  "name": "Order_userId_idx_a489d58a",
-                  "prefix": "Order_userId_idx",
+                  "name": "orders_userId_idx_a489d58a",
+                  "prefix": "orders_userId_idx",
                   "unique": false
                 }
               ],
@@ -698,98 +796,7 @@
               },
               "uniques": []
             },
-            "OrderItem": {
-              "columns": {
-                "id": {
-                  "codecId": "pg/int4@1",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "menuItemId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "orderId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "quantity": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "unitPrice": {
-                  "codecId": "pg/numeric@1",
-                  "nativeType": "numeric",
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [
-                {
-                  "source": {
-                    "columns": [
-                      "orderId"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "OrderItem"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "Order"
-                  }
-                },
-                {
-                  "source": {
-                    "columns": [
-                      "menuItemId"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "OrderItem"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "MenuItem"
-                  }
-                }
-              ],
-              "indexes": [
-                {
-                  "columns": [
-                    "menuItemId"
-                  ],
-                  "name": "OrderItem_menuItemId_idx_715cce4c",
-                  "prefix": "OrderItem_menuItemId_idx",
-                  "unique": false
-                },
-                {
-                  "columns": [
-                    "orderId"
-                  ],
-                  "name": "OrderItem_orderId_idx_d284871b",
-                  "prefix": "OrderItem_orderId_idx",
-                  "unique": false
-                }
-              ],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": []
-            },
-            "User": {
+            "users": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -855,7 +862,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d8e6fe3c94ed61bd25e237ab345eecfb71f8ff09a815f4f47f7a446276bc662c"
+    "storageHash": "a6b5e6e537b221469e19e1dc623feb522d7aa627f123b02f13ff2325e316405d"
   },
   "capabilities": {
     "postgres": {

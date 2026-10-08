@@ -1,53 +1,47 @@
 import type { RequestHandler } from 'express';
 import { HttpError } from '../middleware/errors.js';
-import { store } from '../models/store.js';
-import { findById, optionalString, parseMenuItem, parsePrice, requireBody, requiredString } from './shared.js';
+import { db } from '../prisma/db.js';
+import { normalizeMenuItem, normalizePrice, optionalString, requireBody, requiredString, routeId } from './shared.js';
 
-export const listMenuItems: RequestHandler = (request, response) => {
+export const listMenuItems: RequestHandler = async (request, response) => {
   const categoryId = request.query['categoryId'];
-  const items = typeof categoryId === 'string'
-    ? store.menuItems.filter((item) => item.categoryId === categoryId)
-    : store.menuItems;
-  response.json(items.map((item) => ({
-    ...item,
-    category: store.categories.find((category) => category.id === item.categoryId) ?? null,
-  })));
+  let query = db.orm.public.MenuItem.include('category').orderBy((item) => item.name.asc());
+  if (typeof categoryId === 'string') query = query.where({ categoryId: routeId(categoryId) });
+  response.json(await query.all());
 };
 
-export const getMenuItem: RequestHandler = (request, response) => {
-  const item = findById(store.menuItems, request.params['id']!, 'Menu item');
-  response.json({ ...item, category: store.categories.find((category) => category.id === item.categoryId) ?? null });
+export const getMenuItem: RequestHandler = async (request, response) => {
+  const item = await db.orm.public.MenuItem.where({ id: routeId(request.params['id']) }).include('category').first();
+  if (!item) throw new HttpError(404, 'Menu item not found');
+  response.json(item);
 };
 
-export const createMenuItem: RequestHandler = (request, response) => {
-  const item = parseMenuItem(requireBody(request.body));
-  store.menuItems.push(item);
-  response.status(201).json({ ...item, category: store.categories.find((category) => category.id === item.categoryId) });
+export const createMenuItem: RequestHandler = async (request, response) => {
+  const item = normalizeMenuItem(requireBody(request.body));
+  const created = await db.orm.public.MenuItem.create({ ...item, price: item.price.toFixed(2) });
+  const withCategory = await db.orm.public.MenuItem.where({ id: created.id }).include('category').first();
+  response.status(201).json(withCategory);
 };
 
-export const updateMenuItem: RequestHandler = (request, response) => {
-  const item = findById(store.menuItems, request.params['id']!, 'Menu item');
+export const updateMenuItem: RequestHandler = async (request, response) => {
+  const id = routeId(request.params['id']);
   const body = requireBody(request.body);
-  if (body['name'] !== undefined) item.name = requiredString(body['name'], 'Name');
-  if (body['description'] !== undefined) item.description = optionalString(body['description'], 'Description');
-  if (body['price'] !== undefined) item.price = parsePrice(body['price']);
-  if (body['categoryId'] !== undefined) {
-    const categoryId = requiredString(body['categoryId'], 'Category');
-    findById(store.categories, categoryId, 'Category');
-    item.categoryId = categoryId;
-  }
-  if (body['available'] !== undefined) {
-    if (typeof body['available'] !== 'boolean') throw new HttpError(400, 'Available must be true or false');
-    item.available = body['available'];
-  }
-  response.json({ ...item, category: store.categories.find((category) => category.id === item.categoryId) });
+  const current = await db.orm.public.MenuItem.where({ id }).first();
+  if (!current) throw new HttpError(404, 'Menu item not found');
+  const name = body['name'] === undefined ? current.name : requiredString(body['name'], 'Name');
+  const description = body['description'] === undefined ? current.description : optionalString(body['description'], 'Description');
+  const price = body['price'] === undefined ? Number(current.price) : normalizePrice(body['price']);
+  const categoryId = body['categoryId'] === undefined ? current.categoryId : routeId(body['categoryId']);
+  const available = body['available'] === undefined ? current.available : body['available'];
+  if (typeof available !== 'boolean') throw new HttpError(400, 'Available must be true or false');
+  const updated = await db.orm.public.MenuItem.where({ id }).update({ name, description, price: price.toFixed(2), available, categoryId });
+  if (!updated) throw new HttpError(404, 'Menu item not found');
+  const withCategory = await db.orm.public.MenuItem.where({ id: updated.id }).include('category').first();
+  response.json(withCategory);
 };
 
-export const deleteMenuItem: RequestHandler = (request, response) => {
-  const item = findById(store.menuItems, request.params['id']!, 'Menu item');
-  if (store.orders.some((order) => order.items.some((orderItem) => orderItem.menuItemId === item.id))) {
-    throw new HttpError(409, 'Menu item is part of an order and cannot be deleted');
-  }
-  store.menuItems.splice(store.menuItems.indexOf(item), 1);
+export const deleteMenuItem: RequestHandler = async (request, response) => {
+  const deleted = await db.orm.public.MenuItem.where({ id: routeId(request.params['id']) }).delete();
+  if (!deleted) throw new HttpError(404, 'Menu item not found');
   response.status(204).end();
 };

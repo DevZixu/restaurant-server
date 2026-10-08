@@ -1,19 +1,18 @@
-import { randomUUID } from 'node:crypto';
 import argon2 from 'argon2';
 import type { RequestHandler } from 'express';
 import { HttpError } from '../middleware/errors.js';
-import { store } from '../models/store.js';
-import type { User, UserRole } from '../models/types.js';
-import { ensureUniqueEmail, findById, publicUser, requireBody, requiredString } from './shared.js';
+import { db } from '../prisma/db.js';
+import { ensureValidEmail, publicUser, requireBody, requiredString, routeId, validateRole } from './shared.js';
 
-const roles: UserRole[] = ['manager', 'staff'];
-
-export const listUsers: RequestHandler = (_request, response) => {
-  response.json(store.users.map(publicUser));
+export const listUsers: RequestHandler = async (_request, response) => {
+  const users = await db.orm.public.User.all();
+  response.json(users.map((user) => publicUser(user)));
 };
 
-export const getUser: RequestHandler = (request, response) => {
-  response.json(publicUser(findById(store.users, request.params['id']!, 'User')));
+export const getUser: RequestHandler = async (request, response) => {
+  const user = await db.orm.public.User.where({ id: routeId(request.params['id']) }).first();
+  if (!user) throw new HttpError(404, 'User not found');
+  response.json(publicUser(user));
 };
 
 export const createUser: RequestHandler = async (request, response) => {
@@ -21,45 +20,36 @@ export const createUser: RequestHandler = async (request, response) => {
   const name = requiredString(body['name'], 'Name');
   const email = requiredString(body['email'], 'Email').toLowerCase();
   const password = requiredString(body['password'], 'Password');
-  if (!/^\S+@\S+\.\S+$/.test(email)) throw new HttpError(400, 'Email must be valid');
+  ensureValidEmail(email);
   if (password.length < 8) throw new HttpError(400, 'Password must be at least 8 characters');
-  ensureUniqueEmail(email);
-  const role = body['role'] ?? 'staff';
-  if (typeof role !== 'string' || !roles.includes(role as UserRole)) throw new HttpError(400, 'Role must be manager or staff');
-  const user: User = {
-    id: randomUUID(), name, email,
-    passwordHash: await argon2.hash(password),
-    role: role as UserRole,
-    createdAt: new Date().toISOString(),
-  };
-  store.users.push(user);
+  const role = body['role'] === undefined ? 'staff' : validateRole(body['role']);
+  const passwordHash = await argon2.hash(password);
+  const user = await db.orm.public.User.create({ name, email, passwordHash, role });
   response.status(201).json(publicUser(user));
 };
 
 export const updateUser: RequestHandler = async (request, response) => {
-  const user = findById(store.users, request.params['id']!, 'User');
+  const id = routeId(request.params['id']);
   const body = requireBody(request.body);
-  if (body['name'] !== undefined) user.name = requiredString(body['name'], 'Name');
-  if (body['email'] !== undefined) {
-    const email = requiredString(body['email'], 'Email').toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new HttpError(400, 'Email must be valid');
-    ensureUniqueEmail(email, user.id);
-    user.email = email;
-  }
+  const user = await db.orm.public.User.where({ id }).first();
+  if (!user) throw new HttpError(404, 'User not found');
+  const name = body['name'] === undefined ? user.name : requiredString(body['name'], 'Name');
+  const email = body['email'] === undefined ? user.email : requiredString(body['email'], 'Email').toLowerCase();
+  ensureValidEmail(email);
+  const role = body['role'] === undefined ? user.role : validateRole(body['role']);
+  let passwordHash = user.passwordHash;
   if (body['password'] !== undefined) {
     const password = requiredString(body['password'], 'Password');
     if (password.length < 8) throw new HttpError(400, 'Password must be at least 8 characters');
-    user.passwordHash = await argon2.hash(password);
+    passwordHash = await argon2.hash(password);
   }
-  if (body['role'] !== undefined) {
-    if (typeof body['role'] !== 'string' || !roles.includes(body['role'] as UserRole)) throw new HttpError(400, 'Role must be manager or staff');
-    user.role = body['role'] as UserRole;
-  }
-  response.json(publicUser(user));
+  const updated = await db.orm.public.User.where({ id }).update({ name, email, passwordHash, role });
+  if (!updated) throw new HttpError(404, 'User not found');
+  response.json(publicUser(updated));
 };
 
-export const deleteUser: RequestHandler = (request, response) => {
-  const user = findById(store.users, request.params['id']!, 'User');
-  store.users.splice(store.users.indexOf(user), 1);
+export const deleteUser: RequestHandler = async (request, response) => {
+  const deleted = await db.orm.public.User.where({ id: routeId(request.params['id']) }).delete();
+  if (!deleted) throw new HttpError(404, 'User not found');
   response.status(204).end();
 };

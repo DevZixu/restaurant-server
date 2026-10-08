@@ -1,15 +1,19 @@
 {
   "info": {
     "name": "Restaurant Management API",
-    "description": "Cookie-session API collection. Run Login first; Postman will retain the session cookie.",
+    "description": "Restaurant Management API. Import this collection, set baseUrl if needed, then run Authentication > Register or Login before authenticated requests. Postman retains the restaurant.sid session cookie. Full schemas and validation rules are documented in API.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "categoryId", "value": "cat-mains" },
-    { "key": "menuItemId", "value": "item-burger" },
-    { "key": "orderId", "value": "order-sample-01" },
-    { "key": "userId", "value": "user-demo-manager" }
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "adminEmail", "value": "admin@restaurant.local" },
+    { "key": "adminPassword", "value": "" },
+    { "key": "categoryId", "value": "1" },
+    { "key": "menuItemId", "value": "1" },
+    { "key": "burgerMenuItemId", "value": "1" },
+    { "key": "lemonadeMenuItemId", "value": "5" },
+    { "key": "orderId", "value": "1" },
+    { "key": "userId", "value": "1" }
   ],
   "item": [
     {
@@ -18,14 +22,24 @@
     },
     {
       "name": "Authentication",
+      "description": "Register creates a staff account and signs it in. Login also creates a session. Logout destroys the current session; /auth/me requires a valid session.",
       "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sam Rivera\",\n  \"email\": \"sam@example.com\",\n  \"password\": \"sample-pass-123\"\n}" },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
         {
           "name": "Login",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('login succeeded', () => pm.response.to.have.status(200));"] } }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"jordan@example.com\",\n  \"password\": \"demo-password\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
             "url": "{{baseUrl}}/api/auth/login"
           }
         },
@@ -35,6 +49,7 @@
     },
     {
       "name": "Users",
+      "description": "User records support manager and staff roles. Create requires name, email, and an 8-character-minimum password; responses never expose password hashes.",
       "item": [
         { "name": "List users", "request": { "method": "GET", "url": "{{baseUrl}}/api/users" } },
         { "name": "Get user", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/{{userId}}" } },
@@ -45,31 +60,34 @@
     },
     {
       "name": "Categories",
+      "description": "Categories have a required unique name and an optional description. Deletion is rejected while menu items reference the category.",
       "item": [
-        { "name": "List categories", "request": { "method": "GET", "url": "{{baseUrl}}/api/categories" } },
+        { "name": "List categories", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const categories = pm.response.json();", "const mains = categories.find((category) => category.name === 'Mains');", "if (mains) pm.collectionVariables.set('categoryId', mains.id);"] } }], "request": { "method": "GET", "url": "{{baseUrl}}/api/categories" } },
         { "name": "Get category", "request": { "method": "GET", "url": "{{baseUrl}}/api/categories/{{categoryId}}" } },
-        { "name": "Create category", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Desserts\",\n  \"description\": \"Something sweet\"\n}" }, "url": "{{baseUrl}}/api/categories" } },
+        { "name": "Create category", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) pm.collectionVariables.set('categoryId', pm.response.json().id);"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Desserts\",\n  \"description\": \"Something sweet\"\n}" }, "url": "{{baseUrl}}/api/categories" } },
         { "name": "Update category", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated description\"\n}" }, "url": "{{baseUrl}}/api/categories/{{categoryId}}" } },
         { "name": "Delete category", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/categories/{{categoryId}}" } }
       ]
     },
     {
       "name": "Menu items",
+      "description": "Create requires name, non-negative price, and an existing categoryId. Filter the list with ?categoryId=<id>. Deletion is rejected while the item appears in an order.",
       "item": [
-        { "name": "List menu items", "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items" } },
+        { "name": "List menu items", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const items = pm.response.json();", "const burger = items.find((item) => item.name === 'House Burger');", "const lemonade = items.find((item) => item.name === 'House Lemonade');", "if (burger) pm.collectionVariables.set('burgerMenuItemId', burger.id);", "if (lemonade) pm.collectionVariables.set('lemonadeMenuItemId', lemonade.id);", "if (items[0]) pm.collectionVariables.set('menuItemId', items[0].id);"] } }], "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items" } },
         { "name": "Filter by category", "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items?categoryId={{categoryId}}" } },
         { "name": "Get menu item", "request": { "method": "GET", "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}" } },
-        { "name": "Create menu item", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Chocolate Cake\",\n  \"description\": \"Dark chocolate ganache\",\n  \"price\": 7.5,\n  \"categoryId\": \"cat-mains\"\n}" }, "url": "{{baseUrl}}/api/menu-items" } },
+        { "name": "Create menu item", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) pm.collectionVariables.set('menuItemId', pm.response.json().id);"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Chocolate Cake\",\n  \"description\": \"Dark chocolate ganache\",\n  \"price\": 7.5,\n  \"categoryId\": {{categoryId}}\n}" }, "url": "{{baseUrl}}/api/menu-items" } },
         { "name": "Update menu item", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"price\": 15\n}" }, "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}" } },
         { "name": "Delete menu item", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}" } }
       ]
     },
     {
       "name": "Orders",
+      "description": "Create requires customerName and at least one available menu item with an integer quantity from 1 to 99. Responses include saved unit prices, line totals, and order total. Valid statuses: pending, preparing, ready, completed, cancelled.",
       "item": [
         { "name": "List orders", "request": { "method": "GET", "url": "{{baseUrl}}/api/orders" } },
         { "name": "Get order", "request": { "method": "GET", "url": "{{baseUrl}}/api/orders/{{orderId}}" } },
-        { "name": "Create order", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('orderId', pm.response.json().id); }"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"customerName\": \"Avery Chen\",\n  \"items\": [\n    { \"menuItemId\": \"item-burger\", \"quantity\": 2 },\n    { \"menuItemId\": \"item-soda\", \"quantity\": 1 }\n  ]\n}" }, "url": "{{baseUrl}}/api/orders" } },
+        { "name": "Create order", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) pm.collectionVariables.set('orderId', pm.response.json().id);"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"customerName\": \"Avery Chen\",\n  \"items\": [\n    { \"menuItemId\": {{burgerMenuItemId}}, \"quantity\": 2 },\n    { \"menuItemId\": {{lemonadeMenuItemId}}, \"quantity\": 1 }\n  ]\n}" }, "url": "{{baseUrl}}/api/orders" } },
         { "name": "Update order", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"ready\"\n}" }, "url": "{{baseUrl}}/api/orders/{{orderId}}" } },
         { "name": "Delete order", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/orders/{{orderId}}" } }
       ]
